@@ -4,12 +4,12 @@
 loc='H';
 %% Load data
 if strcmp(loc,'H')
-    dir='C:\Users\GU\Dropbox\GU\1.Investment\4. Alphas (new)\25.ChinaHK_Connect_Quality_Factor\QFactorModel\';
+    dir='C:\Users\gly19\Dropbox\GU\1.Investment\4. Alphas (new)\25.ChinaHK_Connect_Quality_Factor\QFactorModel\';
 else
     dir='O:\langyu\2. InvestmentProcess\SmartBetaModel\QualityFactorModel\QualityFactorModel\';
 end
-load(strcat(dir,'HKQFactorScreenFullList.mat')); %Quarterly Financial data
-load(strcat(dir,'HKQFactorScreenFullTimeseries.mat')); %Daily price data
+load(strcat(dir,'hkqfactorscreenfulllist.mat')); %Quarterly Financial data
+load(strcat(dir,'hkqfactorscreenfulltimeseries.mat')); %Daily price data
 load(strcat(dir,'FinancialDataDaily.mat')); %Daily Financial data mat
 Sector_Info=readtable(strcat(dir,'Other_Data.xlsx'),'Sheet','Sector Info','Range','A:D'); %Sector code
 
@@ -95,7 +95,7 @@ for i=1:size(fieldnames(FinancialDataDaily),1)-1
     combined_zscore=combined_zscore+ipx';%if more than 4 fundamental zscores are NaN, then treat combined_zscore=NaN
     
     %% ****[Tempoary part] for single ratio only****
-    combined_zscore=zscore_mat(:,8);
+%     combined_zscore=zscore_mat(:,8);
     
     %%
     
@@ -137,7 +137,7 @@ end
 ret=[NaN(1,size(PX_Last,2)); tick2ret(table2array(PX_Last))];
 %Long-short version
 positionTable=backshift(1,positionTable);
-TC_roundtrip=0.00013*2; %tradingcost
+TC_roundtrip=0.00033*2; %tradingcost
 tc=TC_roundtrip*ones(size(positionTable));%trading cost estimate percentage
 pnl=smartsum(positionTable.*(ret-tc), 2); %daily return time series
 pnl(isnan(pnl))=0;
@@ -162,9 +162,9 @@ LongOnlyStrat.stats=array2table([apr_si sharpe_si maxdd_si],'VariableNames',{'AP
 QualFactorModelHK.LongShortStrategy=LongShortStrat;
 QualFactorModelHK.LongOnlyStrategy=LongOnlyStrat;
 
-%%
+%% Version control
 
-QualFactorModelHK.version='v1.01';
+QualFactorModelHK.version='v1.4';
 QualFactorModelHK.SectorStats.timestamp=FinancialDataDaily.timestamp;
 QualFactorModelHK.Comment='Set Beta and Volatility as lower the better';
-save QualFactorModelHK.mat QualFactorModelHK;
+save QualFactorModelHKV1.4.mat QualFactorModelHK;
