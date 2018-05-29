@@ -6,19 +6,19 @@
 loc='H';
 %% Load data
 if strcmp(loc,'H')
-    dir='C:\Spectrion\Data\PriceData\QFactorModel\';
+    dir='C:\Users\gly19\Dropbox\GU\1.Investment\4. Alphas (new)\25.ChinaHK_Connect_Quality_Factor\QFactorModel\';
 else
-    dir='O:\langyu\2. InvestmentProcess\SmartBetaModel\QualityFactorModel\QualityFactorModel\';
+    dir='O:\langyu\2. InvestmentProcess\SmartBetaModel\HKEquityModel-master\QFactorModel\';
 end
-load(strcat(dir,'HKQFactorScreenFullList.mat')); %Quarterly Financial data
-load(strcat(dir,'HKQFactorScreenFullTimeseries.mat')); %Daily price data
-load(strcat(dir,'FinancialDataDaily.mat')); %Daily Financial data mat
-Announcement_DT=readtable(strcat(dir,'Other_Data.xlsx'),'Sheet','NL','Range','A4:NV30'); %Earning Announcment date
+load(strcat(dir,'hkqfactorscreenfulllist.mat')); %Quarterly Financial data
+load(strcat(dir,'hkqfactorScreenfulltimeseries.mat')); %Daily price data
+load(strcat(dir,'financialdatadaily.mat')); %Daily Financial data mat
+Announcement_DT=readtable(strcat(dir,'Other_Data.xlsx'),'Sheet','NL','Range','A4:OF30'); %Earning Announcment date
 
 QuarterlyDate={'20150131','20150430','20150731','20151031',...
     '20160131','20160430','20160731','20161031',...
     '20170131','20170430','20170731','20171031',...
-    '20180131'};
+    '20180131','20180430'};
 
 %Quarterly Financial Data
 
@@ -35,11 +35,10 @@ stockname=fieldnames(ScreenFullTS.full.PX_LAST);
 stockname=stockname(2:end-1); %stock names in daily screen
 stockname=cellfun(@(x) x(1:end-7),stockname,'UniformOutput',false);%reformat stock name
 
+QuarterlyScreenName=strcat('Screen',QuarterlyDate);
 
 QuarterlyDate=datenum(QuarterlyDate,'yyyymmdd'); %convert datestring to datenum for quarterly date
 dailytimenum=datenum(timestamp,'dd/mm/yyyy');
-
-QuarterlyScreenName=fieldnames(ScreenFullList);
 
 Announcement_DT_nm=fieldnames(Announcement_DT);%Announcement date table name
 [~,Acmt_DT_nm_inx]=ismember(stockname,Announcement_DT_nm);%locate position of stockname in Announcment date table name
@@ -58,9 +57,10 @@ for k=1:size(ret_mat,2)
     beta_mat(:,k)=movingBeta(ret_mat(:,k),mkt_ret,250);
 end
 beta_mat=beta_mat(242:end,:); %1Y beta
-
+beta_mat(beta_mat==0)=NaN;
 vol_mat=movingStd(ret_mat,250);
 vol_mat=vol_mat(242:end,:);
+vol_mat(vol_mat==0)=NaN;
 
 %% Conversion begins
 for i=1:size(timename,1)
@@ -137,8 +137,7 @@ for i=1:size(timename,1)
                 dateInx_mat(j,16)=dateInx_mat(j,9)/dateInx_mat(j,8); %Net Debt/EBITDA
                 dateInx_mat(j,17)=dateInx_mat(j,2)/dateInx_mat(j,3); %Total Debt/Total Equity
 
-               end               
-               
+               end                             
         end
     end
     stockname_table=table(stockname);
@@ -151,5 +150,5 @@ for i=1:size(timename,1)
     save(strcat(dir,'FinancialDataDaily.mat'),'FinancialDataDaily');
     end
 end
-    
+    FinancialDataDaily.timestamp=timename;
     save(strcat(dir,'FinancialDataDaily.mat'),'FinancialDataDaily');

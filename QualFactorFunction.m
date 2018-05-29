@@ -1,4 +1,4 @@
-function [ScreenFullList,QFactorScreenFullTS]=QualFactorFunction(Country,ScreenName,c,runBBG,neutralscheme)
+function [ScreenFullList,ScreenFullTS]=qualfactorfunction(Country,ScreenName,c,runBBG)
 %Returns FAMA FRENCH factor returns for a given country. 
 %Input argument 1 = ountry which is two letter (US,UK,EU,JP)
 %Input argument 2 = name of the screen which is setup in BBG (e.g. US FAMA FRENCH)
@@ -9,7 +9,7 @@ function [ScreenFullList,QFactorScreenFullTS]=QualFactorFunction(Country,ScreenN
 RfTickerVectr = {'USGG3M Index'}'; %HK. Type "Generic" in BBG for more
 RmTickerVectr = {'HSCEI Index'}'; %HK
 
-if strcmp(Country,'HK')
+if strcmp(Country,'hk')
     RfTicker  = RfTickerVectr(1);
     RmTicker = RmTickerVectr(1);    
 else
@@ -26,28 +26,36 @@ DateVector={'20100131','20100430','20100731','20101031',...
     '20150131','20150430','20150731','20151031',...
     '20160131','20160430','20160731','20161031',...
     '20170131','20170430','20170731','20171031',...
-    '20180131'};
+    '20180131','20180430'};
 
 %DateVector = datestr(busdate(datenum(DateVector,'yyyymmdd'),-1)); %prior business day
-
-QualFactorFull=table;
-neutralscheme='SizeNeutral';% 'SectorNeutral'
+% QualFactorFull=table;
     
-Tickerlist=[];    
-StartDateRef = 21; %HK only available from 20150131
+
+   
+StartDateRef = length(DateVector); %HK only available from 20150131
 for i=StartDateRef:size(DateVector,2)
      if i == StartDateRef %only want to load files if we're not on first loop. 
-        load(sprintf('%s','QualityFactorModel\',Country,'QFactorScreenFullList.mat'))
-        load(sprintf('%s','QualityFactorModel\',Country,'QFactorScreenFullTimeseries.mat'))
+        load(sprintf('%s','QFactorModel\',Country,'qfactorscreenfulllist.mat'))
+        load(sprintf('%s','QFactorModel\',Country,'qfactorscreenfulltimeseries.mat'))
+        Tickerlist=ScreenFullTS.ticker;  
      end
-     
+
+
      if strcmp(runBBG,'Y')    
  %% Get the screen   
         FirstDate = {'PiTDate' ,DateVector{i}};
-        ScreenList=  eqs(c,ScreenName,[],[],[],'overrideFields',FirstDate); %when running on BT's machine
+        ScreenList=  eqs(c,ScreenName,[],[],[],'overrideFields',FirstDate);
+        
         if strcmp(ScreenName,'ChinaHKSouthB Quality')
             [~,idx] = unique(ScreenList(2:end,2)); %remove duplicates
             ScreenList=ScreenList([1;idx+1],:);
+            Delistinx=cellfun(@length,ScreenList(:,1))>7; %remove delisted stocks (using length of ticker of delisted stocks >7)
+            ScreenList=ScreenList(~Delistinx,:);
+            Ticker=ScreenList(:,1);
+            Ticker=strrep(Ticker,'H1','HK'); %Change H1 & H2 to HK (exchange codes)
+            Ticker=strrep(Ticker,'H2','HK'); 
+            ScreenList(:,1)=Ticker;
         end
         Ticker=ScreenList(2:end,1); %Ticker 
         Ticker=strcat(Ticker,' Equity');
@@ -55,7 +63,8 @@ for i=StartDateRef:size(DateVector,2)
         
         screenname=strcat('Screen',DateVector{i});
         ScreenFullList.(screenname)=ScreenList;
-        save(sprintf('%s','QualityFactorModel\',Country,'QFactorScreenFullList.mat'),'ScreenFullList');
+        ScreenFullList.Tickerlist=Tickerlist;
+        save(sprintf('%s','QFactorModel\',Country,'qfactorscreenfulllist.mat'),'ScreenFullList');
      else
         screenname=strcat('Screen',DateVector{i});
         ScreenList=ScreenFullList.(screenname);
@@ -87,7 +96,7 @@ end
         Dat.ticker=Tickerlist;
         ScreenFullTS=Dat; %created for storing just raw data.
         %save data
-        save(sprintf('%s','QualityFactorModel\',Country,'QFactorScreenFullTimeseries.mat'),'ScreenFullTS');
+        save(sprintf('%s','QFactorModel\',Country,'qfactorscreenfulltimeseries.mat'),'ScreenFullTS');
 
 
 % %% Generate return time series

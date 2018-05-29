@@ -6,7 +6,7 @@ loc='H';
 if strcmp(loc,'H')
     dir='C:\Users\gly19\Dropbox\GU\1.Investment\4. Alphas (new)\25.ChinaHK_Connect_Quality_Factor\QFactorModel\';
 else
-    dir='O:\langyu\2. InvestmentProcess\SmartBetaModel\QualityFactorModel\QualityFactorModel\';
+    dir='O:\langyu\2. InvestmentProcess\SmartBetaModel\HKEquityModel-master\QFactorModel\';
 end
 load(strcat(dir,'hkqfactorscreenfulllist.mat')); %Quarterly Financial data
 load(strcat(dir,'hkqfactorscreenfulltimeseries.mat')); %Daily price data
@@ -19,6 +19,7 @@ load QualFactorModelHK.mat
 stknm=cellfun(@(x) x(1:end-7),Sector_Info.Name,'UniformOutput',false);%reformat stock name
 stknm=strcat('BBG', stknm);
 stknm=strrep(stknm,' ','_');
+stknm=strrep(stknm,' Equity','');
 
 stknm_px=cellfun(@(x) x(1:end-7),fieldnames(ScreenFullTS.full.PX_LAST),'UniformOutput',false);%reformat stock name in PX_LAST
 stknm_px=stknm_px(2:end-1);
@@ -50,12 +51,12 @@ for i=1:size(fieldnames(FinancialDataDaily),1)-1
     for k=1:8
         %% step 1: restrict outliers
         ratio=screen.(ratio_name{k});
-        ratio_mid=median(ratio,'omitnan');
-        ratio_upperband=ratio_mid+2*std(ratio,'omitnan');
-        ratio_lowerband=ratio_mid-2*std(ratio,'omitnan');
+        ratio_mid=nanmedian(ratio);
+        ratio_upperband=ratio_mid+2*smartstd(ratio);
+        ratio_lowerband=ratio_mid-2*smartstd(ratio);
         ratio(ratio<ratio_lowerband)=ratio_lowerband;
         ratio(ratio>ratio_upperband)=ratio_upperband;
-        ratio_std=std(ratio,'omitnan');
+        ratio_std=smartstd(ratio);
 
         %% step 2: sector neutral
         sector_GICS={'Consumer_Discretionary','Consumer_Staples','Energy',...
@@ -64,8 +65,8 @@ for i=1:size(fieldnames(FinancialDataDaily),1)-1
         for j=1:11 %11 sectors
             [id,ix]=ismember(sectorcode,j); %locate sector code in the screen
             zs=ratio(sectorcode==j); %strip out stocks in the sector
-            zs_mid=median(zs,'omitnan');
-            zs_std=std(zs,'omitnan');
+            zs_mid=nanmedian(zs);
+            zs_std=smartstd(zs);
             zs_min=min(zs);
             zs_max=max(zs);
             
@@ -121,8 +122,10 @@ for i=1:size(fieldnames(FinancialDataDaily),1)-1
     TopInx(i,1:length(topinx))=topinx';
     BottomInx(i,1:length(bottominx))=bottominx';
     
-%     QualFactorModelHK.SectorStats=sectorstats;  %temp
-%     QualFactorModelHK.ZScoreBoard=ZScore_board;  %temp
+    if i==size(fieldnames(FinancialDataDaily),1)-1
+     QualFactorModelHK.SectorStats=sectorstats;  %temp
+     QualFactorModelHK.ZScoreBoard=ZScore_board;  %temp
+    end
     QualFactorModelHK.PickedStocks.TopName=TopInx;
     QualFactorModelHK.PickedStocks.BottomName=BottomInx;
     
@@ -164,7 +167,7 @@ QualFactorModelHK.LongOnlyStrategy=LongOnlyStrat;
 
 %% Version control
 
-QualFactorModelHK.version='v1.4';
+QualFactorModelHK.version='v1.5';
 QualFactorModelHK.SectorStats.timestamp=FinancialDataDaily.timestamp;
 QualFactorModelHK.Comment='Set Beta and Volatility as lower the better';
-save QualFactorModelHKV1.4.mat QualFactorModelHK;
+save QualFactorModelHKV1.5.mat QualFactorModelHK;
